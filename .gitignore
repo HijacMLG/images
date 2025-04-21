@@ -1,0 +1,10 @@
+@"
+# dependencies
+node_modules/
+
+# environment
+.env
+
+# lockfiles (optional)
+package-lock.json
+"@ | Out-File .gitignore -Encoding utf8

@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Generator</title>
+  <!-- Google Fonts for a clean modern look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* Global settings */
+    * {
+      font-family: 'Inter', sans-serif;
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      display: flex;
+      background-color: #000;
+      color: #fff;
+      height: 100vh;
+    }
+    /* Sidebar styling */
+    .sidebar {
+      width: 300px;
+      background-color: #000;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #333;
+    }
+    .sidebar label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .sidebar textarea,
+    .sidebar select,
+    .sidebar button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #1a1a1a;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 4px;
+      transition: border-color 0.2s;
+    }
+    .sidebar textarea:focus,
+    .sidebar select:focus {
+      outline: none;
+      border-color: #888;
+    }
+    .sidebar button {
+      background-color: #2e2e2e;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.2s, transform 0.2s;
+    }
+    .sidebar button:hover {
+      background-color: #3c3c3c;
+      transform: scale(1.02);
+    }
+    /* Create Account button (no account) in black and white */
+    #createAccountBtn {
+      background-color: #fff;
+      color: #000;
+      border: 1px solid #000;
+      border-radius: 25px;
+      padding: 10px 20px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    #createAccountBtn:hover {
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+      transform: scale(1.03);
+    }
+    /* Dropzone styling */
+    .dropzone {
+      width: 100%;
+      padding: 20px;
+      border: 2px dashed #444;
+      border-radius: 4px;
+      text-align: center;
+      color: #bbb;
+      transition: background-color 0.2s, border-color 0.2s;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+    .dropzone.dragover {
+      background-color: #222;
+      border-color: #888;
+      color: #fff;
+    }
+    /* Main area */
+    .main {
+      flex: 1;
+      position: relative;
+      padding: 20px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      background: #000;
+    }
+    /* Account Panel (top right in main) */
+    #accountPanel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 20;
+      text-align: center;
+    }
+    #accountPanel img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: block;
+      margin: 0 auto;
+      cursor: pointer;
+    }
+    /* Sign Out button (hidden by default) */
+    #signOutBtn {
+      margin-top: 5px;
+      padding: 5px 10px;
+      background-color: #2e2e2e;
+      border: none;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      display: none;
+      font-size: 12px;
+    }
+    #signOutBtn:hover {
+      background-color: #3c3c3c;
+    }
+    /* Coin bar styling */
+    .coin-bar {
+      margin-top: 5px;
+      width: 100px;
+      height: 10px;
+      border: 1px solid #444;
+      background: #333;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .coin-bar-fill {
+      height: 100%;
+      background: #ffcc00;
+      width: 100%;
+      transition: width 0.3s ease;
+    }
+    /* Zoom control (below account panel) */
+    .zoom-control {
+      position: absolute;
+      top: 90px;
+      right: 20px;
+      background: transparent;
+      padding: 0;
+      z-index: 10;
+    }
+    .zoom-control label {
+      font-size: 12px;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .zoom-control input[type="range"] {
+      width: 150px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+    }
+    .zoom-control input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #888;
+      border-radius: 50%;
+      cursor: pointer;
+      margin-top: -5px;
+    }
+    .zoom-control input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      background: #888;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+    .zoom-control input[type="range"]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 4px;
+      background: #888;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+    .zoom-control input[type="range"]::-moz-range-track {
+      width: 100%;
+      height: 4px;
+      background: #888;
+      border-radius: 2px;
+      cursor: pointer;
+    }
+    /* Images container */
+    #imagesContainer {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-gap: 10px;
+      align-items: start;
+      margin-top: 140px;
+    }
+    .image-card {
+      position: relative;
+      background: #111;
+      overflow: hidden;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+    .image-card img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 500px;
+      cursor: pointer;
+    }
+    .image-actions {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      display: flex;
+      gap: 5px;
+    }
+    .action-btn {
+      background-color: rgba(0, 0, 0, 0.6);
+      border: none;
+      color: #fff;
+      padding: 6px 8px;
+      cursor: pointer;
+      border-radius: 3px;
+      font-size: 14px;
+      transition: background-color 0.2s, transform 0.2s;
+    }
+    .action-btn:hover {
+      background-color: rgba(0, 0, 0, 0.8);
+      transform: scale(1.05);
+    }
+    .like-btn.liked {
+      color: #ff5555;
+    }
+    /* Modal styling */
+    #modalOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+    }
+    #modalContent {
+      position: relative;
+      max-width: 90vw;
+      max-height: 90vh;
+      border: 2px solid #444;
+      border-radius: 4px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.7);
+      overflow: auto;
+    }
+    #modalImage {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    #closeModalBtn {
+      position: absolute;
+      top: -30px;
+      right: 0;
+      background: #444;
+      border: none;
+      color: #fff;
+      padding: 5px 10px;
+      cursor: pointer;
+      font-size: 16px;
+      border-radius: 3px;
+      transition: background-color 0.2s;
+    }
+    #closeModalBtn:hover {
+      background: #666;
+    }
+    /* Account Modal styling */
+    #accountModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1100;
+    }
+    #accountModalContent {
+      background: #222;
+      padding: 20px;
+      border-radius: 4px;
+      width: 300px;
+      text-align: center;
+    }
+    #accountModalContent h3 {
+      margin-top: 0;
+    }
+    #accountModalContent input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      background-color: #333;
+      border: 1px solid #444;
+      color: #fff;
+      border-radius: 4px;
+    }
+    #accountModalContent button {
+      width: 100%;
+      padding: 10px;
+      margin-top: 10px;
+      background-color: #2e2e2e;
+      border: none;
+      color: #fff;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    #accountModalContent button:hover {
+      background-color: #3c3c3c;
+    }
+    /* Placeholder card for generating images */
+    .generating-card {
+      width: 100%;
+      aspect-ratio: 4 / 3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #bbb;
+      font-size: 16px;
+      background: #111;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    }
+    .timer-label {
+      margin-top: 5px;
+      font-size: 14px;
+      color: #ccc;
+    }
+    /* Loading overlay styling */
+    #loadingOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.75);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .spinner {
+      border: 8px solid #f3f3f3;
+      border-top: 8px solid #444;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <label for="prompt">Prompt</label>
+    <textarea id="prompt" rows="3" placeholder="Enter prompt..."></textarea>
+    <label for="aspect_ratio">Aspect Ratio</label>
+    <select id="aspect_ratio">
+      <option value="">(No preference)</option>
+      <option value="1:1">1:1</option>
+      <option value="16:9">16:9</option>
+      <option value="2:3">2:3</option>
+      <option value="3:2">3:2</option>
+      <option value="9:16">9:16</option>
+      <option value="21:9">21:9</option>
+    </select>
+    <label for="numImages">Number of Images</label>
+    <select id="numImages">
+      <option value="1" selected>1</option>
+      <option value="2">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+    </select>
+    <button id="generateBtn">Create Image</button>
+    
+    <!-- Dropzone for image upload -->
+    <div id="dropzone" class="dropzone">
+      Drop/Upload an Image (to get a prompt)
+    </div>
+    <!-- Hidden file input for drag & drop fallback -->
+    <input type="file" id="imageInput" accept="image/*" style="display: none;" />
+    <button id="analyzeImageBtn">Analyze Image => Prompt</button>
+  </div>
+
+  <div class="main">
+    <!-- Account Panel (top right in main) -->
+    <div id="accountPanel">
+      <button id="createAccountBtn">Create Account</button>
+    </div>
+    <!-- Zoom control (below account panel) -->
+    <div class="zoom-control">
+      <label for="zoomSlider">Zoom</label>
+      <input type="range" id="zoomSlider" min="0.5" max="2" step="0.01" value="1.0">
+    </div>
+    <div id="imagesContainer"></div>
+  </div>
+
+  <div id="modalOverlay">
+    <div id="modalContent">
+      <img id="modalImage" src="" alt="Full-size image">
+      <button id="closeModalBtn">X</button>
+    </div>
+  </div>
+
+  <!-- Loading overlay -->
+  <div id="loadingOverlay">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Account Modal -->
+  <div id="accountModal">
+    <div id="accountModalContent">
+      <h3>Create Account</h3>
+      <form id="accountForm">
+        <input type="text" id="username" placeholder="Username" required>
+        <input type="email" id="email" placeholder="Email" required>
+        <input type="password" id="password" placeholder="Password" required>
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+        <button type="submit">Sign Up</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // Sidebar elements
+    const promptInput = document.getElementById('prompt');
+    const aspectRatioSelect = document.getElementById('aspect_ratio');
+    const numImagesSelect = document.getElementById('numImages');
+    const generateBtn = document.getElementById('generateBtn');
+    const imagesContainer = document.getElementById('imagesContainer');
+    const zoomSlider = document.getElementById('zoomSlider');
+    const analyzeImageBtn = document.getElementById('analyzeImageBtn');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+
+    // Dropzone elements
+    const dropzone = document.getElementById('dropzone');
+    const imageInput = document.getElementById('imageInput');
+
+    // Modal elements
+    const modalOverlay = document.getElementById('modalOverlay');
+    const modalImage = document.getElementById('modalImage');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+
+    // Account Panel and Modal elements
+    const accountPanel = document.getElementById('accountPanel');
+    const createAccountBtn = document.getElementById('createAccountBtn');
+    const accountModal = document.getElementById('accountModal');
+    const accountForm = document.getElementById('accountForm');
+    const usernameInput = document.getElementById('username');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const confirmPasswordInput = document.getElementById('confirmPassword');
+
+    let placeholders = [];
+    let selectedFile = null;
+    let account = null; // Account object
+
+    // On page load
+    document.addEventListener('DOMContentLoaded', () => {
+      applyZoom(parseFloat(zoomSlider.value));
+      updateAccountPanel();
+      // Only fetch images if an account is active
+      if (account) fetchAllImages();
+    });
+
+    // Zoom slider
+    zoomSlider.addEventListener('input', () => {
+      applyZoom(parseFloat(zoomSlider.value));
+    });
+    function applyZoom(scaleValue) {
+      const minWidth = 200 * scaleValue;
+      imagesContainer.style.gridTemplateColumns = `repeat(auto-fill, minmax(${minWidth}px, 1fr))`;
+    }
+    // Fetch images for the current account (clear container completely)
+    async function fetchAllImages() {
+      if (!account) {
+        imagesContainer.innerHTML = '';
+        return;
+      }
+      try {
+        const resp = await fetch(`/all-images?accountId=${account.id}`);
+        const data = await resp.json();
+        imagesContainer.innerHTML = '';
+        data.images.forEach(imgObj => {
+          const card = createImageCard(imgObj.id, imgObj.src, imgObj.liked);
+          imagesContainer.appendChild(card);
+        });
+      } catch (err) {
+        console.error("Error fetching all images:", err);
+      }
+    }
+    function createImageCard(id, src, liked) {
+      const card = document.createElement('div');
+      card.className = 'image-card';
+      const img = document.createElement('img');
+      img.src = src;
+      img.onclick = () => openModal(src);
+      const actions = document.createElement('div');
+      actions.className = 'image-actions';
+      const btnLike = document.createElement('button');
+      btnLike.className = 'action-btn like-btn';
+      btnLike.textContent = '♥';
+      if (liked) btnLike.classList.add('liked');
+      btnLike.onclick = (e) => {
+        e.stopPropagation();
+        toggleLike(id, btnLike);
+      };
+      const btnRotate = document.createElement('button');
+      btnRotate.className = 'action-btn';
+      btnRotate.textContent = '⟳';
+      btnRotate.onclick = (e) => {
+        e.stopPropagation();
+        if (!account) {
+          alert("Please create an account first.");
+          return;
+        }
+        if (!checkAccountForCost(15)) return;
+        rotateImage(id);
+      };
+      const btnDelete = document.createElement('button');
+      btnDelete.className = 'action-btn';
+      btnDelete.textContent = '🗑';
+      btnDelete.onclick = (e) => {
+        e.stopPropagation();
+        deleteImage(id);
+      };
+      const btnDownload = document.createElement('button');
+      btnDownload.className = 'action-btn';
+      btnDownload.textContent = '⇩';
+      btnDownload.onclick = (e) => {
+        e.stopPropagation();
+        downloadImage(src);
+      };
+      actions.appendChild(btnLike);
+      actions.appendChild(btnRotate);
+      actions.appendChild(btnDelete);
+      actions.appendChild(btnDownload);
+      card.appendChild(img);
+      card.appendChild(actions);
+      return card;
+    }
+    function createPlaceholderCard() {
+      const card = document.createElement('div');
+      card.className = 'image-card generating-card';
+      const label = document.createElement('div');
+      label.textContent = "Generating...";
+      const timerLabel = document.createElement('div');
+      timerLabel.className = 'timer-label';
+      timerLabel.textContent = "0.00s";
+      card.appendChild(label);
+      card.appendChild(timerLabel);
+      return { card, timerLabel };
+    }
+    // Deduct coins if available (15 coins cost)
+    function checkAccountForCost(cost) {
+      if (!account) {
+        alert("Please create an account first.");
+        return false;
+      }
+      if (account.coins < cost) {
+        alert("Insufficient coins.");
+        return false;
+      }
+      account.coins -= cost;
+      updateAccountPanel();
+      return true;
+    }
+    // Generate images (cost 15 coins)
+    generateBtn.addEventListener('click', async () => {
+      if (!account) {
+        alert("Please create an account first.");
+        return;
+      }
+      const prompt = promptInput.value.trim();
+      if (!prompt) {
+        alert("Please enter a prompt!");
+        return;
+      }
+      if (!checkAccountForCost(15)) return;
+      const aspect_ratio = aspectRatioSelect.value;
+      const numImages = parseInt(numImagesSelect.value) || 1;
+      placeholders = [];
+      for (let i = 0; i < numImages; i++) {
+        const placeholder = createPlaceholderCard();
+        imagesContainer.appendChild(placeholder.card);
+        placeholders.push(placeholder);
+      }
+      const startTime = performance.now();
+      const timerInterval = setInterval(() => {
+        const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+        placeholders.forEach(ph => { ph.timerLabel.textContent = `${elapsed}s`; });
+      }, 100);
+      try {
+        const response = await fetch('/generate-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt, aspect_ratio, numImages, accountId: account.id })
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          alert("Error: " + errorData.error);
+          clearInterval(timerInterval);
+          placeholders.forEach(ph => ph.card.remove());
+          placeholders = [];
+          return;
+        }
+        await response.json();
+        clearInterval(timerInterval);
+        placeholders.forEach(ph => ph.card.remove());
+        placeholders = [];
+        fetchAllImages();
+      } catch (error) {
+        console.error('Error generating images:', error);
+        alert("An error occurred while generating images.");
+        clearInterval(timerInterval);
+        placeholders.forEach(ph => ph.card.remove());
+        placeholders = [];
+      }
+    });
+    async function rotateImage(id) {
+      const placeholder = createPlaceholderCard();
+      imagesContainer.appendChild(placeholder.card);
+      const startTime = performance.now();
+      const timerInterval = setInterval(() => {
+        const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
+        placeholder.timerLabel.textContent = `${elapsed}s`;
+      }, 100);
+      try {
+        const resp = await fetch('/rotate-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, accountId: account.id })
+        });
+        if (!resp.ok) {
+          const errorData = await resp.json();
+          alert("Error: " + errorData.error);
+          clearInterval(timerInterval);
+          placeholder.card.remove();
+          return;
+        }
+        clearInterval(timerInterval);
+        placeholder.card.remove();
+        fetchAllImages();
+      } catch (err) {
+        console.error("Error rotating image:", err);
+        alert("An error occurred while rotating image.");
+        clearInterval(timerInterval);
+        placeholder.card.remove();
+      }
+    }
+    async function toggleLike(id, btn) {
+      try {
+        const resp = await fetch('/like-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, accountId: account.id })
+        });
+        if (!resp.ok) {
+          const errorData = await resp.json();
+          alert("Error: " + errorData.error);
+          return;
+        }
+        const data = await resp.json();
+        btn.classList.toggle('liked', data.liked);
+      } catch (err) {
+        console.error("Error toggling like:", err);
+      }
+    }
+    async function deleteImage(id) {
+      try {
+        const resp = await fetch('/delete-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, accountId: account.id })
+        });
+        if (!resp.ok) {
+          const errorData = await resp.json();
+          alert("Error: " + errorData.error);
+          return;
+        }
+        fetchAllImages();
+      } catch (err) {
+        console.error("Error deleting image:", err);
+      }
+    }
+    async function downloadImage(src) {
+      try {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = src;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+          const dataURL = canvas.toDataURL("image/png");
+          const a = document.createElement('a');
+          a.href = dataURL;
+          a.download = 'image.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        };
+        img.onerror = (error) => {
+          console.error('Error loading image for download:', error);
+        };
+      } catch (err) {
+        console.error("Error downloading image:", err);
+      }
+    }
+    function openModal(src) {
+      modalImage.src = src;
+      modalOverlay.style.display = 'flex';
+    }
+    closeModalBtn.addEventListener('click', () => {
+      modalOverlay.style.display = 'none';
+      modalImage.src = '';
+    });
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        modalOverlay.style.display = 'none';
+        modalImage.src = '';
+      }
+    });
+    // Analyze image event (cost 15 coins)
+    analyzeImageBtn.addEventListener('click', async () => {
+      if (!selectedFile) {
+        alert("Please drop or select an image first.");
+        return;
+      }
+      if (!account) {
+        alert("Please create an account first.");
+        return;
+      }
+      if (!checkAccountForCost(15)) return;
+      loadingOverlay.style.display = 'flex';
+      try {
+        const base64 = await fileToBase64(selectedFile);
+        const resp = await fetch('/image-to-prompt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageBase64: base64 })
+        });
+        if (!resp.ok) {
+          const errorData = await resp.json();
+          throw new Error(errorData.error || `Server responded with ${resp.status}: ${resp.statusText}`);
+        }
+        const data = await resp.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        promptInput.value = data.prompt.trim();
+        alert("Prompt from your image: " + data.prompt.trim());
+      } catch (err) {
+        console.error("Error analyzing image:", err);
+        alert("Error: " + (err.message || "Unknown error occurred"));
+      } finally {
+        loadingOverlay.style.display = 'none';
+      }
+    });
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+    // Dropzone events
+    dropzone.addEventListener('click', () => {
+      imageInput.click();
+    });
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+    });
+    dropzone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      const dt = e.dataTransfer;
+      if (dt && dt.files && dt.files.length) {
+        selectedFile = dt.files[0];
+        dropzone.textContent = selectedFile.name;
+      }
+    });
+    imageInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files.length) {
+        selectedFile = e.target.files[0];
+        dropzone.textContent = selectedFile.name;
+      }
+    });
+    // Account modal events
+    createAccountBtn.addEventListener('click', () => {
+      accountModal.style.display = 'flex';
+    });
+    accountForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const username = usernameInput.value.trim();
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+      const confirmPassword = confirmPasswordInput.value;
+      if (!username || !email || !password || !confirmPassword) {
+        alert("Please fill out all fields.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        alert("Passwords do not match.");
+        return;
+      }
+      // Create account with 100 coins, a unique account id, and a random cartoon avatar from RoboHash (set4)
+      const randomNum = Math.floor(Math.random() * 70) + 1;
+      account = {
+        id: Date.now().toString(), // simple unique id
+        coins: 100,
+        avatar: `https://robohash.org/${randomNum}?set=set4`
+      };
+      // Clear previous images from UI on account change
+      imagesContainer.innerHTML = '';
+      updateAccountPanel();
+      accountModal.style.display = 'none';
+      accountForm.reset();
+      fetchAllImages();
+    });
+    function updateAccountPanel() {
+      if (account) {
+        const coinPercentage = Math.max(0, Math.min(100, account.coins));
+        accountPanel.innerHTML = `
+          <img id="avatarImg" src="${account.avatar}" alt="Avatar">
+          <div class="coin-bar">
+            <div class="coin-bar-fill" style="width: ${coinPercentage}%;"></div>
+          </div>
+          <button id="signOutBtn">Sign Out</button>
+        `;
+        const avatarImg = document.getElementById('avatarImg');
+        const signOutBtn = document.getElementById('signOutBtn');
+        avatarImg.addEventListener('click', () => {
+          signOutBtn.style.display = (signOutBtn.style.display === 'none') ? 'block' : 'none';
+        });
+        signOutBtn.addEventListener('click', () => {
+          // On sign-out, clear the account info and the images in the UI.
+          account = null;
+          updateAccountPanel();
+          imagesContainer.innerHTML = '';
+        });
+      } else {
+        accountPanel.innerHTML = `<button id="createAccountBtn">Create Account</button>`;
+        document.getElementById('createAccountBtn').addEventListener('click', () => {
+          accountModal.style.display = 'flex';
+        });
+      }
+    }
+  </script>
+</body>
+</html>
