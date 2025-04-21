@@ -760,40 +760,43 @@
     });
     // Analyze image event (cost 15 coins)
     analyzeImageBtn.addEventListener('click', async () => {
-      if (!selectedFile) {
-        alert("Please drop or select an image first.");
-        return;
-      }
-      if (!account) {
-        alert("Please create an account first.");
-        return;
-      }
-      if (!checkAccountForCost(15)) return;
-      loadingOverlay.style.display = 'flex';
-      try {
-        const base64 = await fileToBase64(selectedFile);
-        const resp = await fetch('/image-to-prompt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageBase64: base64 })
-        });
-        if (!resp.ok) {
-          const errorData = await resp.json();
-          throw new Error(errorData.error || `Server responded with ${resp.status}: ${resp.statusText}`);
-        }
-        const data = await resp.json();
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        promptInput.value = data.prompt.trim();
-        alert("Prompt from your image: " + data.prompt.trim());
-      } catch (err) {
-        console.error("Error analyzing image:", err);
-        alert("Error: " + (err.message || "Unknown error occurred"));
-      } finally {
-        loadingOverlay.style.display = 'none';
-      }
+  if (!selectedFile)      return alert("Please drop or select an image first.");
+  if (!account)           return alert("Please create an account first.");
+  if (!checkAccountForCost(15)) return;
+
+  loadingOverlay.style.display = 'flex';
+  try {
+    // 1️⃣ Kick off
+    const base64 = await fileToBase64(selectedFile);
+    let r = await fetch('/image-to-prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageBase64: base64 })
     });
+    if (!r.ok) throw new Error(`Kickoff failed: ${r.statusText}`);
+    const { jobId } = await r.json();
+    if (!jobId) throw new Error("No jobId returned.");
+
+    // 2️⃣ Poll
+    let result;
+    do {
+      await new Promise(res => setTimeout(res, 2000));
+      r = await fetch(`/prompt-result?jobId=${jobId}`);
+      result = await r.json();
+    } while (result.status !== 'complete');
+
+    // 3️⃣ Use the prompt
+    promptInput.value = result.prompt.trim();
+    alert("Prompt from your image: " + result.prompt.trim());
+
+  } catch (err) {
+    console.error("Error analyzing image:", err);
+    alert("Error: " + err.message);
+  } finally {
+    loadingOverlay.style.display = 'none';
+  }
+});
+
     function fileToBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
